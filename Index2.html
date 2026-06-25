@@ -118,7 +118,7 @@
       const staffId = urlParams.get('staffId') || '';
       
       if (staffId) {
-        document.getElementById('inputStaffId').value = staffId;
+       document.getElementById('inputStaffId').value = staffId;
       }
       
       loadJobs();
@@ -139,21 +139,21 @@
     }
     
     function showTab(type) {
-      document.getElementById('tabSearch').classList.toggle('active', type === 'search');
-      document.getElementById('tabHistory').classList.toggle('active', type === 'history');
-      document.getElementById('searchView').style.display = (type === 'search' ? 'block' : 'none');
-      document.getElementById('historyView').style.display = (type === 'history' ? 'block' : 'none');
+     document.getElementById('tabSearch').classList.toggle('active', type === 'search');
+     document.getElementById('tabHistory').classList.toggle('active', type === 'history');
+     document.getElementById('searchView').style.display = (type === 'search' ? 'block' : 'none');
+     document.getElementById('historyView').style.display = (type === 'history' ? 'block' : 'none');
       if (type === 'history') loadHistory();
     }
     
     function loadHistory() {
       const staffId = document.getElementById('inputStaffId').value.trim();
       if (!staffId) {
-        document.getElementById('historyContainer').innerHTML = '<div style="color:var(--danger); font-weight:bold; padding:10px;">※履歴を確認するには、上部の「スタッフID」を入力してください。</div>';
+       document.getElementById('historyContainer').innerHTML = '<div style="color:var(--danger); font-weight:bold; padding:10px;">※履歴を確認するには、上部の「スタッフID」を入力してください。</div>';
         return;
       }
       
-      document.getElementById('historyContainer').innerHTML = '読み込み中...';
+     document.getElementById('historyContainer').innerHTML = '読み込み中...';
       callGasApi({ action: 'getMyHistory', staffId: staffId })
         .then(function(history) {
           if (!history.length) { document.getElementById('historyContainer').innerHTML = '履歴なし'; return; }
@@ -161,16 +161,16 @@
           history.reverse().forEach(h => {
             html += `<div class="job-card" style="border-left-color:var(--secondary)"><b>${h.jobName}</b><br><small>${h.date}</small></div>`;
           });
-          document.getElementById('historyContainer').innerHTML = html;
+         document.getElementById('historyContainer').innerHTML = html;
         })
         .catch(function(err) {
-          document.getElementById('historyContainer').innerHTML = '<div style="color:red">履歴の読み込みに失敗しました</div>';
+         document.getElementById('historyContainer').innerHTML = '<div style="color:red">履歴の読み込みに失敗しました</div>';
         });
     }
     
     function renderCalendar() {
       const year = currentDate.getFullYear(), month = currentDate.getMonth();
-      document.getElementById('currentMonthLabel').innerText = `${year}年 ${month + 1}月`;
+     document.getElementById('currentMonthLabel').innerText = `${year}年 ${month + 1}月`;
       const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
       
       ['日','月','火','水','木','金','土'].forEach(d => grid.innerHTML += `<small style="color:#888">${d}</small>`);
@@ -197,11 +197,17 @@
         
         const notesHtml = job.notes ? `<div class="job-detail" style="margin-top:5px; color:#666; background:#f5f5f5; padding:5px; border-radius:4px;">📝備考: ${job.notes.replace(/\n/g, '<br>')}</div>` : '';
         
+        // ★ここにGoogleマップのリンクを追加しました★
+        const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.venue)}`;
+
         container.innerHTML += `
           <div class="job-card">
             <b>${job.eventName}</b>
             <div class="job-detail" style="margin-top:5px;">📅日付: ${job.date}</div>
-            <div class="job-detail">📍場所: ${job.venue}</div>
+            <div class="job-detail">
+              📍場所: ${job.venue}
+              <a href="${mapLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-left: 10px; color: var(--primary); text-decoration: none; font-weight: bold; border: 1px solid var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 12px; background-color: #ebf3fc;">🗺️ 地図を見る</a>
+            </div>
             <div class="job-detail">🕒時間: ${job.startTime}～${job.endTime}</div>
             <div class="job-detail">📋内容: ${job.task||''}</div>
             <div class="job-detail">👥人数: ${job.currentCount} / ${job.capacity} 名</div>
@@ -233,7 +239,8 @@
         return;
       }
       
-      let h = '<ul>'; selectedJobs.forEach(j => h += `<li style="margin-bottom:8px;">${j.date}: ${j.name} <button style="margin-left:10px; cursor:pointer;" onclick="removeJobFromModal('${j.id}')">取消</button></li>`);
+      let h = '<ul>';
+      selectedJobs.forEach(j => h += `<li style="margin-bottom:8px;">${j.date}: ${j.name} <button style="margin-left:10px; cursor:pointer;" onclick="removeJobFromModal('${j.id}')">取消</button></li>`);
       
       showModal('応募確認', h + '</ul><p style="margin-top:15px; color:var(--primary); font-weight:bold;">この内容で応募しますか？</p>', function() {
         toggleLoading(true);
@@ -266,10 +273,10 @@
     };
     
     function showModal(t, b, ok, cancel = true) {
-      document.getElementById('modalTitle').innerText = t; document.getElementById('modalBody').innerHTML = b;
-      document.getElementById('modalCancelBtn').style.display = cancel ? 'block' : 'none';
-      document.getElementById('modalOkBtn').onclick = () => { closeModal(); if(ok) ok(); };
-      document.getElementById('modalOverlay').style.display = 'block'; document.getElementById('customModal').style.display = 'block';
+     document.getElementById('modalTitle').innerText = t; document.getElementById('modalBody').innerHTML = b;
+     document.getElementById('modalCancelBtn').style.display = cancel ? 'block' : 'none';
+     document.getElementById('modalOkBtn').onclick = () => { closeModal(); if(ok) ok(); };
+     document.getElementById('modalOverlay').style.display = 'block'; document.getElementById('customModal').style.display = 'block';
     }
     
     function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; document.getElementById('customModal').style.display = 'none'; }
