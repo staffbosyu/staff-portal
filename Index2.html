@@ -44,7 +44,7 @@
     
     <div class="card">
       <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px;">応募者情報</h3>
-      <label style="font-size: 14px; font-weight: bold;">登録番号(※個人番号)</label>
+      <label style="font-size: 14px; font-weight: bold;">スタッフID</label>
       <input type="text" id="inputStaffId" value="" placeholder="例: 12345" autocapitalize="off">
       <label style="font-size: 14px; font-weight: bold;">お名前</label>
       <input type="text" id="inputStaffName" placeholder="例: 山田 太郎">
@@ -193,12 +193,19 @@
       
       dayJobs.forEach(job => {
         const isSel = selectedJobs.some(s => s.id === job.id), isFull = job.currentCount >= job.capacity;
-        const btn = isSel ? `<button class="btn btn-remove" onclick="toggleJob('${job.id}','','',true)">選択解除</button>` : (isFull ? '<b style="color:red">満員</b>' : `<button class="btn btn-select" onclick="toggleJob('${job.id}','${job.date}','${job.eventName}',false)">選択</button>`);
+        
+        // 【修正】案件名やIDに含まれるシングルクォーテーション「'」やダブルクォーテーション「"」を安全にエスケープする
+        const safeEventName = (job.eventName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
+        const safeId = (job.id || '').replace(/'/g, "\\'");
+        
+        // エスケープ処理を施した safeId と safeEventName をボタンに適用
+        const btn = isSel ? `<button class="btn btn-remove" onclick="toggleJob('${safeId}','','',true)">選択解除</button>` : (isFull ? '<b style="color:red">満員</b>' : `<button class="btn btn-select" onclick="toggleJob('${safeId}','${job.date}','${safeEventName}',false)">選択</button>`);
         
         const notesHtml = job.notes ? `<div class="job-detail" style="margin-top:5px; color:#666; background:#f5f5f5; padding:5px; border-radius:4px;">📝備考: ${job.notes.replace(/\n/g, '<br>')}</div>` : '';
         
-        // ★ここにGoogleマップのリンクを追加しました★
-        const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.venue)}`;
+        // 【修正】Googleマップの検索リンクURLの記述ミスを修正しました
+        const safeVenue = job.venue || '';
+        const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(safeVenue)}`;
 
         container.innerHTML += `
           <div class="job-card">
