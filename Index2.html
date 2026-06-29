@@ -194,17 +194,16 @@
       dayJobs.forEach(job => {
         const isSel = selectedJobs.some(s => s.id === job.id), isFull = job.currentCount >= job.capacity;
         
-        // 【修正】案件名やIDに含まれるシングルクォーテーション「'」やダブルクォーテーション「"」を安全にエスケープする
-        const safeEventName = (job.eventName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
-        const safeId = (job.id || '').replace(/'/g, "\\'");
+        // 【修正】String(...) で囲むことで、IDや案件名が「数値」で送られてきてもエラーにならないように修正しました
+        const safeEventName = String(job.eventName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
+        const safeId = String(job.id || '').replace(/'/g, "\\'");
         
-        // エスケープ処理を施した safeId と safeEventName をボタンに適用
         const btn = isSel ? `<button class="btn btn-remove" onclick="toggleJob('${safeId}','','',true)">選択解除</button>` : (isFull ? '<b style="color:red">満員</b>' : `<button class="btn btn-select" onclick="toggleJob('${safeId}','${job.date}','${safeEventName}',false)">選択</button>`);
         
-        const notesHtml = job.notes ? `<div class="job-detail" style="margin-top:5px; color:#666; background:#f5f5f5; padding:5px; border-radius:4px;">📝備考: ${job.notes.replace(/\n/g, '<br>')}</div>` : '';
+        const notesHtml = job.notes ? `<div class="job-detail" style="margin-top:5px; color:#666; background:#f5f5f5; padding:5px; border-radius:4px;">📝備考: ${String(job.notes || '').replace(/\n/g, '<br>')}</div>` : '';
         
-        // 【修正】Googleマップの検索リンクURLの記述ミスを修正しました
-        const safeVenue = job.venue || '';
+        // 【修正】Googleマップの検索URLを正しい形式に変更しました
+        const safeVenue = String(job.venue || '');
         const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(safeVenue)}`;
 
         container.innerHTML += `
