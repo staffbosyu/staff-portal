@@ -100,22 +100,15 @@
     let allJobs = [], selectedJobs = [], currentDate = new Date(), selectedDateStr = "";
     let paramGroup = 'SO', paramType = 'A';
 
-    // 深夜時間を24時間以上の表記（例: 01:00 → 25:00）に変換する関数
+    // 「24:00:00.000」などのデータから「hh:mm」の部分だけを抜き出す関数
     function formatLateNightTime(timeStr) {
       if (!timeStr) return '';
       
       const parts = String(timeStr).split(':');
-      if (parts.length !== 2) return timeStr; // 「時:分」の形式でない場合はそのまま返す
+      if (parts.length < 2) return timeStr; // 万が一形式が合わない場合はそのまま返す
 
-      let hour = parseInt(parts[0], 10);
-      const minute = parts[1];
-
-      // 0時（0:00 または 00:00）の場合のみ、24時表記にする
-      if (hour === 0) {
-        hour = 24;
-      }
-
-      return hour + ':' + minute;
+      // 最初の「時」と「分」だけをコロンで繋いで返す
+      return parts[0] + ':' + parts[1];
     }
     
     // 共通の通信関数 (fetchを使用)
