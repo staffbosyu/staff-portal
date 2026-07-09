@@ -110,10 +110,9 @@
       let hour = parseInt(parts[0], 10);
       const minute = parts[1];
 
-      // 0時〜5時までの場合、24を足して24〜29時表記にする
-      // ※もし「6時（30:00）」まで変換したい場合は、 hour <= 6 に変更してください。
-      if (hour >= 0 && hour <= 5) {
-        hour += 24;
+      // 0時（0:00 または 00:00）の場合のみ、24時表記にする
+      if (hour === 0) {
+        hour = 24;
       }
 
       return hour + ':' + minute;
