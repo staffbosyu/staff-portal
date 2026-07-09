@@ -100,6 +100,25 @@
     let allJobs = [], selectedJobs = [], currentDate = new Date(), selectedDateStr = "";
     let paramGroup = 'SO', paramType = 'A';
 
+    // 深夜時間を24時間以上の表記（例: 01:00 → 25:00）に変換する関数
+    function formatLateNightTime(timeStr) {
+      if (!timeStr) return '';
+      
+      const parts = String(timeStr).split(':');
+      if (parts.length !== 2) return timeStr; // 「時:分」の形式でない場合はそのまま返す
+
+      let hour = parseInt(parts[0], 10);
+      const minute = parts[1];
+
+      // 0時〜5時までの場合、24を足して24〜29時表記にする
+      // ※もし「6時（30:00）」まで変換したい場合は、 hour <= 6 に変更してください。
+      if (hour >= 0 && hour <= 5) {
+        hour += 24;
+      }
+
+      return hour + ':' + minute;
+    }
+    
     // 共通の通信関数 (fetchを使用)
     function callGasApi(params) {
       const url = new URL(GAS_URL);
@@ -214,7 +233,7 @@
               📍場所: ${job.venue}
               <a href="${mapLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-left: 10px; color: var(--primary); text-decoration: none; font-weight: bold; border: 1px solid var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 12px; background-color: #ebf3fc;">🗺️ 地図を見る</a>
             </div>
-            <div class="job-detail">🕒時間: ${job.startTime}～${job.endTime}</div>
+            <div class="job-detail">🕒時間: ${formatLateNightTime(job.startTime)}～${formatLateNightTime(job.endTime)}</div>
             <div class="job-detail">📋内容: ${job.task||''}</div>
             <div class="job-detail">👥人数: ${job.currentCount} / ${job.capacity} 名</div>
             ${notesHtml}
