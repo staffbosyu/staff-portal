@@ -18,9 +18,15 @@
     .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
     .calendar-day { padding: 10px 0; border-radius: 5px; background: #f9f9f9; cursor: pointer; }
     .calendar-day.has-job { background: var(--primary); color: white; font-weight: bold; }
+    /* ★追加: カレンダー上の急募案件日用のスタイル */
+    .calendar-day.has-urgent-job { background: var(--danger); color: white; font-weight: bold; }
     .calendar-day.selected { border: 2px solid #333; }
     
     .job-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 5px solid var(--primary); }
+    /* ★追加: 急募案件用のカードスタイル */
+    .job-card.urgent-card { border-left: 5px solid var(--danger); background-color: #FDEDEC; }
+    .urgent-badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-left: 8px; vertical-align: middle; }
+    
     .job-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
     .job-detail { font-size: 13px; margin-bottom: 4px; color: #555; }
     .btn { display: block; width: 100%; padding: 12px; color: white; text-align: center; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
@@ -103,18 +109,12 @@
     // 0:00（または00:00）のみ、24:00に変換する関数
     function formatLateNightTime(timeStr) {
       if (!timeStr) return '';
-      
       const parts = String(timeStr).split(':');
       if (parts.length !== 2) return timeStr; // 「時:分」の形式でない場合はそのまま返す
-
       let hour = parseInt(parts[0], 10);
       const minute = parts[1];
-
       // 0時（0:00 または 00:00）の場合のみ、24時表記にする
-      if (hour === 0) {
-        hour = 24;
-      }
-
+      if (hour === 0) { hour = 24; }
       return hour + ':' + minute;
     }
     
@@ -129,14 +129,13 @@
     }
     
     window.onload = function() {
-      // 外部HTML用のURLパラメータ取得処理
       const urlParams = new URLSearchParams(window.location.search);
       paramGroup = urlParams.get('group') || 'SO';
       paramType = urlParams.get('type') || 'A';
       const staffId = urlParams.get('staffId') || '';
       
       if (staffId) {
-       document.getElementById('inputStaffId').value = staffId;
+        document.getElementById('inputStaffId').value = staffId;
       }
       
       loadJobs();
@@ -157,21 +156,21 @@
     }
     
     function showTab(type) {
-     document.getElementById('tabSearch').classList.toggle('active', type === 'search');
-     document.getElementById('tabHistory').classList.toggle('active', type === 'history');
-     document.getElementById('searchView').style.display = (type === 'search' ? 'block' : 'none');
-     document.getElementById('historyView').style.display = (type === 'history' ? 'block' : 'none');
+      document.getElementById('tabSearch').classList.toggle('active', type === 'search');
+      document.getElementById('tabHistory').classList.toggle('active', type === 'history');
+      document.getElementById('searchView').style.display = (type === 'search' ? 'block' : 'none');
+      document.getElementById('historyView').style.display = (type === 'history' ? 'block' : 'none');
       if (type === 'history') loadHistory();
     }
     
     function loadHistory() {
       const staffId = document.getElementById('inputStaffId').value.trim();
       if (!staffId) {
-       document.getElementById('historyContainer').innerHTML = '<div style="color:var(--danger); font-weight:bold; padding:10px;">※履歴を確認するには、上部の「スタッフID」を入力してください。</div>';
+        document.getElementById('historyContainer').innerHTML = '<div style="color:var(--danger); font-weight:bold; padding:10px;">※履歴を確認するには、上部の「スタッフID」を入力してください。</div>';
         return;
       }
       
-     document.getElementById('historyContainer').innerHTML = '読み込み中...';
+      document.getElementById('historyContainer').innerHTML = '読み込み中...';
       callGasApi({ action: 'getMyHistory', staffId: staffId })
         .then(function(history) {
           if (!history.length) { document.getElementById('historyContainer').innerHTML = '履歴なし'; return; }
@@ -179,16 +178,16 @@
           history.reverse().forEach(h => {
             html += `<div class="job-card" style="border-left-color:var(--secondary)"><b>${h.jobName}</b><br><small>${h.date}</small></div>`;
           });
-         document.getElementById('historyContainer').innerHTML = html;
+          document.getElementById('historyContainer').innerHTML = html;
         })
         .catch(function(err) {
-         document.getElementById('historyContainer').innerHTML = '<div style="color:red">履歴の読み込みに失敗しました</div>';
+          document.getElementById('historyContainer').innerHTML = '<div style="color:red">履歴の読み込みに失敗しました</div>';
         });
     }
     
     function renderCalendar() {
       const year = currentDate.getFullYear(), month = currentDate.getMonth();
-     document.getElementById('currentMonthLabel').innerText = `${year}年 ${month + 1}月`;
+      document.getElementById('currentMonthLabel').innerText = `${year}年 ${month + 1}月`;
       const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
       
       ['日','月','火','水','木','金','土'].forEach(d => grid.innerHTML += `<small style="color:#888">${d}</small>`);
@@ -197,8 +196,19 @@
       
       for (let i = 1; i <= last; i++) {
         const dStr = `${year}/${('0'+(month+1)).slice(-2)}/${('0'+i).slice(-2)}`;
-        const has = allJobs.some(j => j.date === dStr);
-        grid.innerHTML += `<div class="calendar-day ${has?'has-job':''} ${dStr===selectedDateStr?'selected':''}" onclick="selectDate('${dStr}')">${i}</div>`;
+        
+        // ★修正: 急募案件がある日かどうかを判定
+        const hasNormalJob = allJobs.some(j => j.date === dStr && !j.isUrgent);
+        const hasUrgentJob = allJobs.some(j => j.date === dStr && j.isUrgent);
+        
+        let dayClass = '';
+        if (hasUrgentJob) {
+          dayClass = 'has-urgent-job';
+        } else if (hasNormalJob) {
+          dayClass = 'has-job';
+        }
+
+        grid.innerHTML += `<div class="calendar-day ${dayClass} ${dStr===selectedDateStr?'selected':''}" onclick="selectDate('${dStr}')">${i}</div>`;
       }
     }
     
@@ -212,7 +222,6 @@
       dayJobs.forEach(job => {
         const isSel = selectedJobs.some(s => s.id === job.id), isFull = job.currentCount >= job.capacity;
         
-        // 【修正】String(...) で囲むことで、IDや案件名が「数値」で送られてきてもエラーにならないように修正しました
         const safeEventName = String(job.eventName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
         const safeId = String(job.id || '').replace(/'/g, "\\'");
         
@@ -220,13 +229,16 @@
         
         const notesHtml = job.notes ? `<div class="job-detail" style="margin-top:5px; color:#666; background:#f5f5f5; padding:5px; border-radius:4px;">📝備考: ${String(job.notes || '').replace(/\n/g, '<br>')}</div>` : '';
         
-        // 【修正】Googleマップの検索URLを正しい形式に変更しました
         const safeVenue = String(job.venue || '');
         const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(safeVenue)}`;
 
+        // ★追加: 急募案件用のクラスとバッジ
+        const isUrgentCardClass = job.isUrgent ? 'urgent-card' : '';
+        const urgentBadgeHtml = job.isUrgent ? '<span class="urgent-badge">急募🔥</span>' : '';
+
         container.innerHTML += `
-          <div class="job-card">
-            <b>${job.eventName}</b>
+          <div class="job-card ${isUrgentCardClass}">
+            <b>${job.eventName}</b> ${urgentBadgeHtml}
             <div class="job-detail" style="margin-top:5px;">📅日付: ${job.date}</div>
             <div class="job-detail">
               📍場所: ${job.venue}
@@ -297,10 +309,12 @@
     };
     
     function showModal(t, b, ok, cancel = true) {
-     document.getElementById('modalTitle').innerText = t; document.getElementById('modalBody').innerHTML = b;
-     document.getElementById('modalCancelBtn').style.display = cancel ? 'block' : 'none';
-     document.getElementById('modalOkBtn').onclick = () => { closeModal(); if(ok) ok(); };
-     document.getElementById('modalOverlay').style.display = 'block'; document.getElementById('customModal').style.display = 'block';
+      document.getElementById('modalTitle').innerText = t;
+      document.getElementById('modalBody').innerHTML = b;
+      document.getElementById('modalCancelBtn').style.display = cancel ? 'block' : 'none';
+      document.getElementById('modalOkBtn').onclick = () => { closeModal(); if(ok) ok(); };
+      document.getElementById('modalOverlay').style.display = 'block';
+      document.getElementById('customModal').style.display = 'block';
     }
     
     function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; document.getElementById('customModal').style.display = 'none'; }
