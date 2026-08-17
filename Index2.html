@@ -18,12 +18,10 @@
     .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
     .calendar-day { padding: 10px 0; border-radius: 5px; background: #f9f9f9; cursor: pointer; }
     .calendar-day.has-job { background: var(--primary); color: white; font-weight: bold; }
-    /* ★追加: カレンダー上の急募案件日用のスタイル */
     .calendar-day.has-urgent-job { background: var(--danger); color: white; font-weight: bold; }
     .calendar-day.selected { border: 2px solid #333; }
     
     .job-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 5px solid var(--primary); }
-    /* ★追加: 急募案件用のカードスタイル */
     .job-card.urgent-card { border-left: 5px solid var(--danger); background-color: #FDEDEC; }
     .urgent-badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-left: 8px; vertical-align: middle; }
     
@@ -106,19 +104,6 @@
     let allJobs = [], selectedJobs = [], currentDate = new Date(), selectedDateStr = "";
     let paramGroup = 'SO', paramType = 'A';
 
-    // 0:00（または00:00）のみ、24:00に変換する関数
-    function formatLateNightTime(timeStr) {
-      if (!timeStr) return '';
-      const parts = String(timeStr).split(':');
-      if (parts.length !== 2) return timeStr; // 「時:分」の形式でない場合はそのまま返す
-      let hour = parseInt(parts[0], 10);
-      const minute = parts[1];
-      // 0時（0:00 または 00:00）の場合のみ、24時表記にする
-      if (hour === 0) { hour = 24; }
-      return hour + ':' + minute;
-    }
-    
-    // 共通の通信関数 (fetchを使用)
     function callGasApi(params) {
       const url = new URL(GAS_URL);
       Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
@@ -197,7 +182,6 @@
       for (let i = 1; i <= last; i++) {
         const dStr = `${year}/${('0'+(month+1)).slice(-2)}/${('0'+i).slice(-2)}`;
         
-        // ★修正: 急募案件がある日かどうかを判定
         const hasNormalJob = allJobs.some(j => j.date === dStr && !j.isUrgent);
         const hasUrgentJob = allJobs.some(j => j.date === dStr && j.isUrgent);
         
@@ -232,10 +216,10 @@
         const safeVenue = String(job.venue || '');
         const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(safeVenue)}`;
 
-        // ★追加: 急募案件用のクラスとバッジ
         const isUrgentCardClass = job.isUrgent ? 'urgent-card' : '';
         const urgentBadgeHtml = job.isUrgent ? '<span class="urgent-badge">急募🔥</span>' : '';
 
+        // ★修正: 取得したそのままの時間を表示する (job.startTime, job.endTime)
         container.innerHTML += `
           <div class="job-card ${isUrgentCardClass}">
             <b>${job.eventName}</b> ${urgentBadgeHtml}
@@ -244,7 +228,7 @@
               📍場所: ${job.venue}
               <a href="${mapLink}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-left: 10px; color: var(--primary); text-decoration: none; font-weight: bold; border: 1px solid var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 12px; background-color: #ebf3fc;">🗺️ 地図を見る</a>
             </div>
-            <div class="job-detail">🕒時間: ${formatLateNightTime(job.startTime)}～${formatLateNightTime(job.endTime)}</div>
+            <div class="job-detail">🕒時間: ${job.startTime}～${job.endTime}</div>
             <div class="job-detail">📋内容: ${job.task||''}</div>
             <div class="job-detail">👥人数: ${job.currentCount} / ${job.capacity} 名</div>
             ${notesHtml}
@@ -285,7 +269,7 @@
           action: 'applyForJobs',
           staffId: staffId,
           staffName: staffName,
-          jobsArray: JSON.stringify(selectedJobs) // 配列を文字列化して送信
+          jobsArray: JSON.stringify(selectedJobs)
         })
         .then(function(res) {
           toggleLoading(false); 
